@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maund Weight &amp; Price Calculator</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1720">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Maund Calc">
+<style>
+  :root{
+    --bg:#0f1720;
+    --card:#182634;
+    --accent:#f2a93b;
+    --accent2:#4bb3a5;
+    --text:#eef2f5;
+    --muted:#9fb0bd;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI',Tahoma,Arial,sans-serif;
+    background:linear-gradient(180deg,#0f1720,#0b1218);
+    color:var(--text);
+    min-height:100vh;
+    padding:20px 14px 60px;
+  }
+  .wrap{max-width:460px;margin:0 auto;}
+  h1{
+    font-size:1.3rem;
+    text-align:center;
+    margin:6px 0 20px;
+    color:var(--accent);
+  }
+  .card{
+    background:var(--card);
+    border-radius:16px;
+    padding:18px;
+    margin-bottom:16px;
+    box-shadow:0 4px 18px rgba(0,0,0,0.35);
+  }
+  label{
+    display:block;
+    font-size:0.85rem;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  .row{
+    display:flex;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .row > div{flex:1;}
+  input[type=number]{
+    width:100%;
+    padding:12px 10px;
+    border-radius:10px;
+    border:1px solid #2a3b4a;
+    background:#0f1c26;
+    color:var(--text);
+    font-size:1.05rem;
+    outline:none;
+  }
+  input[type=number]:focus{border-color:var(--accent);}
+  .results{
+    background:var(--card);
+    border-radius:16px;
+    padding:18px;
+  }
+  .res-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 0;
+    border-bottom:1px solid #22323f;
+  }
+  .res-row:last-child{border-bottom:none;}
+  .res-label{color:var(--muted);font-size:0.9rem;}
+  .res-value{font-size:1.15rem;font-weight:600;}
+  .highlight{color:var(--accent2);}
+  .price{color:var(--accent);font-size:1.5rem;font-weight:700;}
+  .note{
+    font-size:0.78rem;
+    color:var(--muted);
+    text-align:center;
+    margin-top:14px;
+    line-height:1.5;
+  }
+  .badge{
+    display:inline-block;
+    background:#22323f;
+    color:var(--accent2);
+    padding:3px 9px;
+    border-radius:20px;
+    font-size:0.72rem;
+    margin-left:6px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>⚖️ Maund Calculator (Auto Katt)</h1>
+
+  <div class="card">
+    <label>Rate (Price per Maund)</label>
+    <div class="row">
+      <div><input type="number" id="rate" placeholder="مثلاً 8000" value="8000"></div>
+    </div>
+
+    <label>Total Weight (Gross)</label>
+    <div class="row">
+      <div>
+        <label style="margin-bottom:4px;">Maund</label>
+        <input type="number" id="maund" placeholder="0" value="10">
+      </div>
+      <div>
+        <label style="margin-bottom:4px;">Kg</label>
+        <input type="number" id="kg" placeholder="0" value="0">
+      </div>
+    </div>
+
+    <label>Katt per Maund (kg) <span class="badge">editable</span></label>
+    <input type="number" id="kattRate" value="1" step="0.1">
+  </div>
+
+  <div class="results">
+    <div class="res-row">
+      <span class="res-label">Gross Weight</span>
+      <span class="res-value" id="grossOut">-</span>
+    </div>
+    <div class="res-row">
+      <span class="res-label">Total Katt (Deduction)</span>
+      <span class="res-value highlight" id="kattOut">-</span>
+    </div>
+    <div class="res-row">
+      <span class="res-label">Net Weight (After Katt)</span>
+      <span class="res-value highlight" id="netOut">-</span>
+    </div>
+    <div class="res-row">
+      <span class="res-label">Total Price</span>
+      <span class="res-value price" id="priceOut">-</span>
+    </div>
+  </div>
+
+  <div class="note">
+    1 Maund = 40 Kg. Har Maund pe darj kiya gaya katt automatically gross weight se minus ho kar Net weight nikalta hai, jis par price calculate hoti hai. Katt rate (default 1 kg/Maund) upar se change kar sakte hain.
+  </div>
+
+  <div style="text-align:center; margin-top:22px; color:#9fb0bd; font-size:0.8rem; letter-spacing:0.5px;">
+    Made By <span style="color:#f2a93b; font-weight:600;">Romeo Azhar</span>
+  </div>
+</div>
+
+<script>
+const MAUND_KG = 40;
+
+function fmtMaundKg(totalKg){
+  const sign = totalKg < 0 ? "-" : "";
+  totalKg = Math.abs(totalKg);
+  const maunds = Math.floor(totalKg / MAUND_KG + 1e-9);
+  let kg = totalKg - maunds*MAUND_KG;
+  kg = Math.round(kg*100)/100;
+  return `${sign}${maunds} Maund ${kg} Kg`;
+}
+
+function calculate(){
+  const rate = parseFloat(document.getElementById('rate').value) || 0;
+  const maundIn = parseFloat(document.getElementById('maund').value) || 0;
+  const kgIn = parseFloat(document.getElementById('kg').value) || 0;
+  const kattRate = parseFloat(document.getElementById('kattRate').value) || 0;
+
+  const grossKg = maundIn*MAUND_KG + kgIn;
+
+  // Katt applies per gross maund (whole maunds in gross weight)
+  const grossMaundsWhole = Math.floor(grossKg / MAUND_KG + 1e-9);
+  const kattKg = grossMaundsWhole * kattRate;
+
+  const netKg = Math.max(grossKg - kattKg, 0);
+  const netMaundsDecimal = netKg / MAUND_KG;
+  const totalPrice = netMaundsDecimal * rate;
+
+  document.getElementById('grossOut').textContent = fmtMaundKg(grossKg);
+  document.getElementById('kattOut').textContent = kattKg.toFixed(2) + " Kg";
+  document.getElementById('netOut').textContent = fmtMaundKg(netKg);
+  document.getElementById('priceOut').textContent = "Rs " + totalPrice.toLocaleString('en-IN', {maximumFractionDigits:2});
+}
+
+['rate','maund','kg','kattRate'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', calculate);
+});
+
+calculate();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
